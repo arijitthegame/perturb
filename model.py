@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Siamese(nn.Module):
@@ -33,9 +32,11 @@ class Siamese(nn.Module):
     def forward(self, x1, x2):
         out1 = self.forward_one(x1)
         out2 = self.forward_one(x2)
+        print(out2.shape)
         dis = torch.abs(out1 - out2)
         out = self.out(dis)
-        #  return self.sigmoid(out)
+        #print("out",out.shape)
+        # return self.sigmoid(out)
         return out
 
 

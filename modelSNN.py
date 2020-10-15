@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class Siamese(nn.Module):
 
-    def __init__(self,input_size = 100, hidden_size1=300, hidden_size2=200, output_size = 10):
+    def __init__(self,input_size = 100, hidden_size1=300, hidden_size2=200, output_size = 1):
 
         super(Siamese, self).__init__()
         self.mlp = nn.Sequential(

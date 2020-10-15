@@ -1,63 +1,8 @@
 import torch
-from torch.utils.data import Dataset, DataLoader
-import os
+from torch.utils.data import Dataset
 from numpy.random import choice as npc
 import numpy as np
-import time
 import random
-
-
-
-def delete_zero(X):
-    return X[~np.all(X == 0, axis=1)]
-
-def make_one_perturbed_data(anndata, idx = None, sgRNA_list=[]):
-
-    if idx != None and idx < len(sgRNA_list) :
-        sgRNA = sgRNA_list[idx]
-        X_is_pertrubed = (anndata.obs[sgRNA] != 0).values.reshape(-1, 1)
-        X_not_perturbed = (anndata.obs[sgRNA] == 0).values.reshape(-1, 1)
-        X_train = (anndata.obs['batch'] == "0").to_numpy(dtype=int).reshape(-1, 1)
-        X_test = (anndata.obs['batch'] == "1").to_numpy(dtype=int).reshape(-1, 1)
-
-        X_pertrubed_train = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_train)
-        X_pertrubed_test = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_test)
-        X_npertrubed_train = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_train)
-        X_npertrubed_test = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_test)
-
-        return X_pertrubed_train, X_pertrubed_test, X_npertrubed_train, X_npertrubed_test
-
-    if idx == None and sgRNA_list != []:
-        X_is_pertrubed = (anndata.obs[sgRNA_list].sum(axis=1) == 0).values.reshape(-1, 1)
-        X_not_perturbed = (anndata.obs[sgRNA_list].sum(axis=1) != 0).values.reshape(-1, 1)
-        X_train = (anndata.obs['batch'] == "0").to_numpy(dtype=int).reshape(-1, 1)
-        X_test = (anndata.obs['batch'] == "1").to_numpy(dtype=int).reshape(-1, 1)
-
-        X_pertrubed_train = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_train)
-        X_pertrubed_test = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_test)
-        X_npertrubed_train = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_train)
-        X_npertrubed_test = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_test)
-
-        return X_pertrubed_train, X_pertrubed_test, X_npertrubed_train, X_npertrubed_test
-
-    else:
-        print('No sgRNA found')
-
-
-def make_total_data(anndata, sgRNA_list = []):
-
-    if sgRNA_list != []:
-        X_train = {}
-        X_test = {}
-
-        for idx in range(len(sgRNA_list)):
-            X_train[idx],X_test[idx],_ ,_ = make_one_perturbed_data(anndata, idx, sgRNA_list)
-
-        X_train[len(sgRNA_list)],X_test[len(sgRNA_list)],_ ,_ = make_one_perturbed_data(anndata, None, sgRNA_list)
-
-        return X_train,X_test
-    else:
-        print('No sgRNA found')
 
 
 class Trainset(Dataset):
@@ -71,7 +16,7 @@ class Trainset(Dataset):
         self.num_classes = len(sgRNA_list) + 1
 
     def __len__(self):
-        return 128000000
+        return 1280000000
 
     def __getitem__(self, index):
         label = None
@@ -133,6 +78,59 @@ class Testset(Dataset):
         cell2 = torch.from_numpy(cell2).float()
         return cell1, cell2
 
+
+
+
+def delete_zero(X):
+    return X[~np.all(X == 0, axis=1)]
+
+def make_one_perturbed_data(anndata, idx = None, sgRNA_list=[]):
+
+    if idx != None and idx < len(sgRNA_list) :
+        sgRNA = sgRNA_list[idx]
+        X_is_pertrubed = (anndata.obs[sgRNA] != 0).values.reshape(-1, 1)
+        X_not_perturbed = (anndata.obs[sgRNA] == 0).values.reshape(-1, 1)
+        X_train = (anndata.obs['batch'] == "0").to_numpy(dtype=int).reshape(-1, 1)
+        X_test = (anndata.obs['batch'] == "1").to_numpy(dtype=int).reshape(-1, 1)
+
+        X_pertrubed_train = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_train)
+        X_pertrubed_test = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_test)
+        X_npertrubed_train = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_train)
+        X_npertrubed_test = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_test)
+
+        return X_pertrubed_train, X_pertrubed_test, X_npertrubed_train, X_npertrubed_test
+
+    if idx == None and sgRNA_list != []:
+        X_is_pertrubed = (anndata.obs[sgRNA_list].sum(axis=1) == 0).values.reshape(-1, 1)
+        X_not_perturbed = (anndata.obs[sgRNA_list].sum(axis=1) != 0).values.reshape(-1, 1)
+        X_train = (anndata.obs['batch'] == "0").to_numpy(dtype=int).reshape(-1, 1)
+        X_test = (anndata.obs['batch'] == "1").to_numpy(dtype=int).reshape(-1, 1)
+
+        X_pertrubed_train = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_train)
+        X_pertrubed_test = delete_zero(X_is_pertrubed * anndata.obsm['X_pca'] * X_test)
+        X_npertrubed_train = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_train)
+        X_npertrubed_test = delete_zero(X_not_perturbed * anndata.obsm['X_pca'] * X_test)
+
+        return X_pertrubed_train, X_pertrubed_test, X_npertrubed_train, X_npertrubed_test
+
+    else:
+        print('No sgRNA found')
+
+
+def make_total_data(anndata, sgRNA_list = []):
+
+    if sgRNA_list != []:
+        X_train = {}
+        X_test = {}
+
+        for idx in range(len(sgRNA_list)):
+            X_train[idx],X_test[idx],_ ,_ = make_one_perturbed_data(anndata, idx, sgRNA_list)
+
+        X_train[len(sgRNA_list)],X_test[len(sgRNA_list)],_ ,_ = make_one_perturbed_data(anndata, None, sgRNA_list)
+
+        return X_train,X_test
+    else:
+        print('No sgRNA found')
 
 
 

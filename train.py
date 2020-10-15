@@ -12,11 +12,14 @@ from collections import deque
 import os
 import scanpy as sc
 import makedata
-import preprocessing
+
+
 
 
 
 if __name__ == '__main__':
+
+    print("hi")
 
     Flags = gflags.FLAGS
     gflags.DEFINE_bool("cuda", True, "use cuda")
@@ -53,8 +56,8 @@ if __name__ == '__main__':
     net = Siamese()
 
     # multi gpu
-    if len(Flags.gpu_ids.split(",")) > 1:
-        net = torch.nn.DataParallel(net)
+    # if len(Flags.gpu_ids.split(",")) > 1:
+    #    net = torch.nn.DataParallel(net)
 
     if Flags.cuda:
         net.cuda()
@@ -73,15 +76,13 @@ if __name__ == '__main__':
         if batch_id > Flags.max_iter:
             break
         if Flags.cuda:
-            cell1, cell2, label = Variable(cell1.cuda()), Variable(cell2.cuda()), Variable(label.cuda())
-        else:
-            cell1, cell2, label = Variable(cell1), Variable(cell2), Variable(label)
-        optimizer.zero_grad()
+            cell1, cell2, label = cell1.cuda(), cell2.cuda(), label.cuda()
         output = net.forward(cell1, cell2)
         loss = loss_fn(output, label)
         loss_val += loss.item()
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
         if batch_id % Flags.show_every == 0 :
             print('[%d]\tloss:\t%.5f\ttime lapsed:\t%.2f s'%(batch_id, loss_val/Flags.show_every, time.time() - time_start))
             loss_val = 0
