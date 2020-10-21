@@ -18,6 +18,10 @@ class Siamese(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size2, hidden_size1),
             nn.ReLU(),
+            nn.Linear(hidden_size1, hidden_size2),
+            nn.ReLU(),
+            nn.Linear(hidden_size2, hidden_size1),
+            nn.ReLU(),
         )
         self.liner = nn.Sequential(nn.Linear(hidden_size1, output_size), nn.Sigmoid())
         # self.out = nn.Linear(output_size, 1)

@@ -12,8 +12,9 @@ class Trainset(Dataset):
         np.random.seed(0)
         #self.transform = transform
         self.sgRNA_list = sgRNA_list
-        self.datas, _ = make_total_data(anndata, sgRNA_list)
-        self.num_classes = len(sgRNA_list) + 1
+        self.trains, _ = make_total_data(anndata, sgRNA_list)
+        self.datas,_ = split(self.trains)
+        self.num_classes = len(self.datas)
 
     def __len__(self):
         return 1280000000
@@ -44,7 +45,7 @@ class Trainset(Dataset):
 
 class Testset(Dataset):
 
-    def __init__(self, anndata, sgRNA_list, times=200, way=20):
+    def __init__(self, anndata, sgRNA_list, times=200, way=33):
         np.random.seed(1)
         super(Testset, self).__init__()
         #self.transform = transform
@@ -52,8 +53,10 @@ class Testset(Dataset):
         self.way = way
         self.cell1 = None
         self.idx1 = None
-        _ ,self.datas  = make_total_data(anndata, sgRNA_list)
-        self.num_classes = len(sgRNA_list) + 1
+        #_ ,self.datas  = make_total_data(anndata, sgRNA_list)
+        self.trains, _ = make_total_data(anndata, sgRNA_list)
+        _, self.datas = split(self.trains)
+        self.num_classes = len(self.datas)
 
     def __len__(self):
         return self.times * self.way
@@ -66,19 +69,34 @@ class Testset(Dataset):
             self.idx1 = random.randint(0, self.num_classes - 1)
             self.cell1 = random.choice(self.datas[self.idx1])
             cell2 = random.choice(self.datas[self.idx1])
+            #cell3 = random.choice(self.datas[self.idx1])
+            #cell4 = random.choice(self.datas[self.idx1])
         # generate cell pair from different class
         else:
-            idx2 = random.randint(0, self.num_classes - 1)
-            while self.idx1 == idx2:
-                idx2 = random.randint(0, self.num_classes - 1)
+            if idx < self.idx1 + 1:
+                idx2 = idx - 1
+            else:
+                idx2 = idx
             cell2 = random.choice(self.datas[idx2])
-
+            #cell3 = random.choice(self.datas[idx2])
+            #cell4 = random.choice(self.datas[idx2])
 
         cell1 = torch.from_numpy(self.cell1).float()
         cell2 = torch.from_numpy(cell2).float()
-        return cell1, cell2
+        #cell3 = torch.from_numpy(cell3).float()
+        #cell4 = torch.from_numpy(cell4).float()
+        return cell1, cell2 #,cell3, cell4
 
+def split(dic, ratio = 0.7):
+    X_train = {}
+    X_test = {}
 
+    for idx in range(len(dic)):
+        select = random.sample(range(len(dic[idx])), int(np.floor(ratio * len(dic[idx]))))
+        X_train[idx] = dic[idx][select, :]
+        X_test[idx] = dic[idx][list(set(range(len(dic[idx]))) - set(select)), :]
+
+    return X_train, X_test
 
 
 def delete_zero(X):
@@ -117,7 +135,7 @@ def make_one_perturbed_data(anndata, idx = None, sgRNA_list=[]):
         print('No sgRNA found')
 
 
-def make_total_data(anndata, sgRNA_list = []):
+def make_total_data(anndata, sgRNA_list = [], non_perturbed = False):
 
     if sgRNA_list != []:
         X_train = {}
@@ -126,7 +144,8 @@ def make_total_data(anndata, sgRNA_list = []):
         for idx in range(len(sgRNA_list)):
             X_train[idx],X_test[idx],_ ,_ = make_one_perturbed_data(anndata, idx, sgRNA_list)
 
-        X_train[len(sgRNA_list)],X_test[len(sgRNA_list)],_ ,_ = make_one_perturbed_data(anndata, None, sgRNA_list)
+        if non_perturbed:
+            X_train[len(sgRNA_list)],X_test[len(sgRNA_list)],_ ,_ = make_one_perturbed_data(anndata, None, sgRNA_list)
 
         return X_train,X_test
     else:

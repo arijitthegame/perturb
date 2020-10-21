@@ -25,7 +25,7 @@ if __name__ == '__main__':
     gflags.DEFINE_bool("cuda", True, "use cuda")
     gflags.DEFINE_string("train_path", "/home/member/xywang/WORKSPACE/MaryGUO/one-shot/MOCK_MON_crispr_combine","training folder")
     gflags.DEFINE_string("test_path", "/home/member/xywang/WORKSPACE/MaryGUO/one-shot/SARS2_MON_crispr_combine",'path of testing folder')
-    gflags.DEFINE_integer("way", 20, "how much way one-shot learning")
+    gflags.DEFINE_integer("way", 33, "how much way one-shot learning")
     gflags.DEFINE_string("times", 400, "number of samples to test accuracy")
     gflags.DEFINE_integer("workers", 4, "number of dataLoader workers")
     gflags.DEFINE_integer("batch_size", 128, "number of batch size")
@@ -33,16 +33,17 @@ if __name__ == '__main__':
     gflags.DEFINE_integer("show_every", 10, "show result after each show_every iter.")
     gflags.DEFINE_integer("save_every", 100, "save model after each save_every iter.")
     gflags.DEFINE_integer("test_every", 100, "test model after each test_every iter.")
-    gflags.DEFINE_integer("max_iter", 50000, "number of iterations before stopping")
+    gflags.DEFINE_integer("max_iter", 90000000, "number of iterations before stopping")
     gflags.DEFINE_string("model_path", "/home/member/xywang/WORKSPACE/MaryGUO/one-shot/models", "path to store model")
-    gflags.DEFINE_string("gpu_ids", "2,3,6,7,8,9", "gpu ids used to train")
+    gflags.DEFINE_string("gpu_ids", "4,5", "gpu ids used to train")
 
     Flags(sys.argv)
 
     perturb_mock, sgRNA_list_mock = makedata.json_to_perturb_data(path = Flags.train_path + "/crispr_analysis")
     perturb_sars, sgRNA_list_sars = makedata.json_to_perturb_data(path = Flags.test_path + "/crispr_analysis")
 
-    total = sc.read_h5ad("/home/member/xywang/WORKSPACE/MaryGUO/one-shot/total_after.h5ad")
+    #total = sc.read_h5ad("/home/member/xywang/WORKSPACE/MaryGUO/one-shot/total_after.h5ad")
+    total = sc.read_h5ad("/home/member/xywang/WORKSPACE/MaryGUO/one-shot/one_perturbed.h5ad")
 
     os.environ["CUDA_VISIBLE_DEVICES"] = Flags.gpu_ids
     print("use gpu:", Flags.gpu_ids, "to train.")
@@ -94,7 +95,6 @@ if __name__ == '__main__':
             for _, (test1, test2) in enumerate(testLoader, 1):
                 if Flags.cuda:
                     test1, test2 = test1.cuda(), test2.cuda()
-                test1, test2 = Variable(test1), Variable(test2)
                 output = net.forward(test1, test2).data.cpu().numpy()
                 pred = np.argmax(output)
                 if pred == 0:

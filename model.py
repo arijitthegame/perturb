@@ -18,6 +18,10 @@ class Siamese(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size2, hidden_size1),
             nn.ReLU(),
+            nn.Linear(hidden_size1, hidden_size2),
+            nn.ReLU(),
+            nn.Linear(hidden_size2, hidden_size1),
+            nn.ReLU(),
         )
         self.liner = nn.Sequential(nn.Linear(hidden_size1, output_size), nn.Sigmoid())
         self.out = nn.Linear(output_size, 1)
@@ -32,7 +36,6 @@ class Siamese(nn.Module):
     def forward(self, x1, x2):
         out1 = self.forward_one(x1)
         out2 = self.forward_one(x2)
-        print(out2.shape)
         dis = torch.abs(out1 - out2)
         out = self.out(dis)
         #print("out",out.shape)

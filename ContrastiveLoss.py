@@ -8,7 +8,7 @@ class ContrastiveLoss(nn.Module):
     Takes embeddings of two samples and a target label == 1 if samples are from the same class and label == 0 otherwise
     """
 
-    def __init__(self, margin = 5):
+    def __init__(self, margin = 1.2):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
         self.eps = 1e-9
