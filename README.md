@@ -1,28 +1,8 @@
 # Perturb-seq
 
-## Rrequirements 
-- scanpy 
-- numpy as np
-- scipy as sp
-- pandas as pd
-- json
-- os
-- matplotlib
-- seaborn 
-- rpy2
-- logging
-- anndata2ri
-- torch
-- time
-- gflags
-- collections
-- sys
-- pickle
-- random
-- scipy
-- sklearn
+## Preprocessing 
 
-## Preprocessing steps
+Steps
 
 - Make the scanpy data with annotation of perterbations
 - Quality control
@@ -31,10 +11,15 @@
 - Highly Variable Genes
 - PCA
 
-## run step
-- run the preprocessing.ipynb and get total_after.h5ad
-- train and test by running
+## Perturb-SNN
+one-shot leearning with Siamese net work/ Triplet net work with triplet loss => good results 
 
-```shell
-python3 train.py 
-```
+## MAML
+Model-Agnostic Meta-Learning (few-shot learning) 
+
+## matchingnetwork
+simple version of Matching Networks for One Shot Learning
+
+## kernel
+kernel methods
+
