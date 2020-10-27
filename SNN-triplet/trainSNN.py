@@ -3,7 +3,7 @@ import pickle
 from dataloader import Trainset, Testset
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from model import Siamese
+from modelSNN import Siamese
 import time
 import numpy as np
 import gflags
@@ -12,8 +12,7 @@ from collections import deque
 import os
 import scanpy as sc
 import makedata
-
-
+import ContrastiveLoss as cl
 
 
 
@@ -33,17 +32,17 @@ if __name__ == '__main__':
     gflags.DEFINE_integer("show_every", 10, "show result after each show_every iter.")
     gflags.DEFINE_integer("save_every", 100, "save model after each save_every iter.")
     gflags.DEFINE_integer("test_every", 100, "test model after each test_every iter.")
-    gflags.DEFINE_integer("max_iter", 90000000, "number of iterations before stopping")
+    gflags.DEFINE_integer("max_iter", 100000, "number of iterations before stopping")
     gflags.DEFINE_string("model_path", "/home/member/xywang/WORKSPACE/MaryGUO/one-shot/models", "path to store model")
-    gflags.DEFINE_string("gpu_ids", "4,5", "gpu ids used to train")
+    gflags.DEFINE_string("gpu_ids", "0", "gpu ids used to train")
 
     Flags(sys.argv)
 
     perturb_mock, sgRNA_list_mock = makedata.json_to_perturb_data(path = Flags.train_path + "/crispr_analysis")
     perturb_sars, sgRNA_list_sars = makedata.json_to_perturb_data(path = Flags.test_path + "/crispr_analysis")
 
-    #total = sc.read_h5ad("/home/member/xywang/WORKSPACE/MaryGUO/one-shot/total_after.h5ad")
     total = sc.read_h5ad("/home/member/xywang/WORKSPACE/MaryGUO/one-shot/one_perturbed.h5ad")
+
 
     os.environ["CUDA_VISIBLE_DEVICES"] = Flags.gpu_ids
     print("use gpu:", Flags.gpu_ids, "to train.")
@@ -53,11 +52,11 @@ if __name__ == '__main__':
     testLoader = DataLoader(testSet, batch_size=Flags.way, shuffle=False, num_workers=Flags.workers)
     trainLoader = DataLoader(trainSet, batch_size=Flags.batch_size, shuffle=False, num_workers=Flags.workers)
 
-    loss_fn = torch.nn.BCEWithLogitsLoss(size_average=True)
+    loss_fn = cl.ContrastiveLoss()
     net = Siamese()
 
     # multi gpu
-    # if len(Flags.gpu_ids.split(",")) > 1:
+    #if len(Flags.gpu_ids.split(",")) > 1:
     #    net = torch.nn.DataParallel(net)
 
     if Flags.cuda:
@@ -78,8 +77,8 @@ if __name__ == '__main__':
             break
         if Flags.cuda:
             cell1, cell2, label = cell1.cuda(), cell2.cuda(), label.cuda()
-        output = net.forward(cell1, cell2)
-        loss = loss_fn(output, label)
+        out1,out2 = net.forward(cell1, cell2)
+        loss = loss_fn(out1,out2, label)
         loss_val += loss.item()
         loss.backward()
         optimizer.step()
@@ -95,8 +94,13 @@ if __name__ == '__main__':
             for _, (test1, test2) in enumerate(testLoader, 1):
                 if Flags.cuda:
                     test1, test2 = test1.cuda(), test2.cuda()
-                output = net.forward(test1, test2).data.cpu().numpy()
-                pred = np.argmax(output)
+                out1,out2 = net.forward(test1, test2)
+                output1 = (out2 - out1).pow(2).sum(1).cpu().detach().numpy()
+                # out1, out3 = net.forward(test1, test3)
+                # output2 = (out2 - out1).pow(2).sum(1).cpu().detach().numpy()
+                # out1, out4 = net.forward(test1, test4)
+                # output3 = (out2 - out1).pow(2).sum(1).cpu().detach().numpy()
+                pred = np.argmin(output1)
                 if pred == 0:
                     right += 1
                 else: error += 1
